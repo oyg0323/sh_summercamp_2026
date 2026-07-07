@@ -1,1 +1,0 @@
-# sh_summercamp_2026
