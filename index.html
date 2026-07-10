@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e99">
+<title>여름 한조각 · 현장 운영</title>
+<style>
+  :root{
+    --blue:#0b6e99; --blue-d:#085575; --sand:#f7b733; --bg:#f4f6f8;
+    --card:#ffffff; --line:#e3e8ee; --txt:#1c2733; --sub:#5c6b7a;
+    --now:#0e8a5f; --now-bg:#e8f7f0; --past:#9aa7b3; --red:#d84343;
+    --nav-h:60px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+    background:var(--bg); color:var(--txt); font-size:15px; line-height:1.45;
+    padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);
+  }
+  header{
+    position:sticky; top:0; z-index:30;
+    background:linear-gradient(135deg,var(--blue) 0%,#0c8ab8 100%);
+    color:#fff; padding:12px 16px 10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .h-top{display:flex; justify-content:space-between; align-items:baseline;}
+  .h-title{font-size:17px; font-weight:800; letter-spacing:-.3px;}
+  .h-title small{font-weight:500; opacity:.85; font-size:12px; margin-left:6px;}
+  #clock{font-size:15px; font-weight:700; font-variant-numeric:tabular-nums;}
+  .h-bot{display:flex; justify-content:space-between; align-items:center; margin-top:6px;}
+  #status-pill{
+    font-size:12px; font-weight:700; background:rgba(255,255,255,.2);
+    border-radius:20px; padding:3px 10px;
+  }
+  #now-brief{font-size:12px; opacity:.95; max-width:60%; text-align:right;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  nav{
+    position:fixed; bottom:0; left:0; right:0; z-index:30;
+    background:var(--card); border-top:1px solid var(--line);
+    display:flex; height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -2px 10px rgba(0,0,0,.06);
+  }
+  nav button{
+    flex:1; border:0; background:none; font-family:inherit;
+    font-size:11px; color:var(--sub); font-weight:600; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  }
+  nav button .ico{font-size:20px; line-height:1;}
+  nav button.on{color:var(--blue);}
+  main{padding:12px 12px 4px; max-width:640px; margin:0 auto;}
+  .page{display:none;} .page.on{display:block;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; margin-bottom:10px;}
+  h2{font-size:15px; margin:4px 2px 10px; font-weight:800;}
+  .muted{color:var(--sub); font-size:12px;}
+  .btn{
+    border:1px solid var(--line); background:var(--card); color:var(--sub);
+    font-family:inherit; font-size:12px; font-weight:600;
+    border-radius:20px; padding:6px 12px; cursor:pointer;
+  }
+  .day-chips{display:flex; gap:8px; margin-bottom:10px;}
+  .day-chips button{
+    flex:1; border:1px solid var(--line); background:var(--card); border-radius:12px;
+    padding:8px 4px; font-family:inherit; cursor:pointer; text-align:center;
+  }
+  .day-chips .d1{font-size:14px; font-weight:800; color:var(--txt);}
+  .day-chips .d2{font-size:11px; color:var(--sub);}
+  .day-chips button.on{background:var(--blue); border-color:var(--blue);}
+  .day-chips button.on .d1,.day-chips button.on .d2{color:#fff;}
+  .track-chips{display:none; gap:8px; margin-bottom:12px;}
+  .track-chips.show{display:flex;}
+  .track-chips button{
+    flex:1; border:1.5px solid var(--line); background:var(--card); border-radius:24px;
+    padding:9px 4px; font-family:inherit; cursor:pointer;
+    font-size:13.5px; font-weight:800; color:var(--sub);
+  }
+  .track-chips button.on{background:var(--sand); border-color:var(--sand); color:#5b4200;}
+  .tl-item{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:11px 13px; margin-bottom:8px; position:relative;
+  }
+  .tl-item.has-chk{cursor:pointer;}
+  .tl-item.past{opacity:.55;}
+  .tl-item.now{
+    border:2px solid var(--now); background:var(--now-bg);
+    box-shadow:0 2px 10px rgba(14,138,95,.18);
+  }
+  .tl-time{font-size:13px; font-weight:800; color:var(--blue); font-variant-numeric:tabular-nums;}
+  .tl-item.now .tl-time{color:var(--now);}
+  .track-tag{
+    display:inline-block; font-size:10px; font-weight:800; vertical-align:2px;
+    border-radius:8px; padding:1px 7px; margin-left:6px;
+  }
+  .track-tag.e{background:#e2f1fb; color:#0b6e99;}
+  .track-tag.m{background:#fdeecd; color:#8a6100;}
+  .now-badge{
+    position:absolute; top:-9px; right:12px; background:var(--now); color:#fff;
+    font-size:10px; font-weight:800; padding:2px 9px; border-radius:10px;
+    animation:pulse 1.6s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .next-badge{
+    position:absolute; top:-9px; right:12px; background:var(--sand); color:#5b4200;
+    font-size:10px; font-weight:800; padding:2px 9px; border-radius:10px;
+  }
+  .tl-title{font-size:15px; font-weight:700; margin-top:2px;}
+  .tl-meta{font-size:12px; color:var(--sub); margin-top:3px;}
+  .tl-meta b{color:var(--txt); font-weight:600;}
+  .tl-note{font-size:12px; color:var(--sub); margin-top:5px; white-space:pre-line;
+    border-top:1px dashed var(--line); padding-top:5px;}
+  .tl-sub{margin-top:7px; border-left:3px solid var(--line); padding-left:9px;}
+  .tl-sub .s-row{font-size:12.5px; margin-bottom:4px;}
+  .tl-sub .s-row b{color:var(--blue-d);}
+  .chk-summary{
+    display:flex; align-items:center; gap:6px; margin-top:8px;
+    font-size:12px; font-weight:700; color:var(--blue);
+    border-top:1px solid var(--line); padding-top:7px;
+  }
+  .tl-item.now .chk-summary{border-color:rgba(14,138,95,.25);}
+  .chk-summary .arrow{margin-left:auto; transition:transform .2s; font-size:11px; color:var(--sub);}
+  .tl-item.open .chk-summary .arrow{transform:rotate(90deg);}
+  .chk-summary .cnt{font-variant-numeric:tabular-nums;}
+  .chk-summary .cnt.full{color:var(--now);}
+  .chk-list{display:none; margin-top:4px;}
+  .tl-item.open .chk-list{display:block;}
+  label.chk{
+    display:flex; align-items:center; gap:10px; padding:8px 2px;
+    border-bottom:1px solid var(--line); cursor:pointer;
+  }
+  label.chk:last-child{border-bottom:0;}
+  label.chk input[type=checkbox]{
+    width:21px; height:21px; accent-color:var(--now); flex-shrink:0;
+  }
+  label.chk .t{flex:1; font-size:13.5px;}
+  label.chk .t small{display:block; color:var(--sub); font-size:11px;}
+  label.chk.done .t{color:var(--past); text-decoration:line-through;}
+  #goto-now{
+    position:fixed; right:14px; bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px);
+    z-index:25; background:var(--now); color:#fff; border:0; border-radius:24px;
+    padding:10px 16px; font-family:inherit; font-size:13px; font-weight:700;
+    box-shadow:0 4px 12px rgba(0,0,0,.25); cursor:pointer; display:none;
+  }
+  .prog-wrap{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .prog-bar{flex:1; height:8px; background:var(--line); border-radius:6px; overflow:hidden;}
+  .prog-bar i{display:block; height:100%; background:var(--now); border-radius:6px;
+    transition:width .25s;}
+  .prog-txt{font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .fl-chips{display:flex; gap:8px; margin-bottom:10px;}
+  .fl-chips button{
+    flex:1; border:1px solid var(--line); background:var(--card); border-radius:12px;
+    padding:9px 4px; font-family:inherit; cursor:pointer;
+  }
+  .fl-chips button.on{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .fl-chips .f1{font-size:13px; font-weight:800;}
+  .fl-chips .f2{font-size:11px; opacity:.8;}
+  .grade-head{
+    font-size:12px; font-weight:800; color:var(--blue-d);
+    background:#eaf3f8; border-radius:8px; padding:4px 10px; margin:12px 0 2px;
+  }
+  .st-row{display:flex; align-items:center; gap:8px; padding:7px 2px;
+    border-bottom:1px solid var(--line);}
+  .st-row input[type=checkbox]{width:21px; height:21px; accent-color:var(--now); flex-shrink:0;}
+  .st-name{flex:1; font-size:14px; font-weight:600;}
+  .st-name small{font-weight:400; color:var(--sub); font-size:11px; margin-left:4px;}
+  .st-row.done .st-name{color:var(--past); text-decoration:line-through;}
+  .seat-in{
+    width:64px; border:1px solid var(--line); border-radius:8px; padding:5px 6px;
+    font-family:inherit; font-size:12px; text-align:center; color:var(--txt);
+    background:#fafbfc;
+  }
+  .seat-in:focus{outline:2px solid var(--blue); border-color:var(--blue); background:#fff;}
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin:4px 2px 10px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-top">
+    <div class="h-title">☀️ 여름 한조각<small>2026 여름신앙학교 · 제주</small></div>
+    <div id="clock">--:--:--</div>
+  </div>
+  <div class="h-bot">
+    <div id="status-pill">준비 중</div>
+    <div id="now-brief"></div>
+  </div>
+</header>
+
+<main>
+  <section class="page on" id="pg-sched">
+    <div class="day-chips" id="day-chips"></div>
+    <div class="track-chips" id="track-chips">
+      <button id="tr-e" onclick="pickTrack('e')">🌊 초등부</button>
+      <button id="tr-m" onclick="pickTrack('m')">🎣 중고등부</button>
+    </div>
+    <div class="muted" style="margin:0 4px 10px">일정을 탭하면 해당 일정의 체크리스트가 열립니다. 체크는 자동 저장됩니다.</div>
+    <div id="tl"></div>
+  </section>
+
+  <section class="page" id="pg-fly">
+    <div class="toolbar">
+      <h2 style="margin:0">✈️ 탑승 체크</h2>
+      <button class="btn" onclick="resetFlight()">현재 편 초기화</button>
+    </div>
+    <div class="card muted" style="margin-bottom:10px">
+      기준 인원 : 학생 40명 · 봉사자 15명 · 총 55명 &nbsp;|&nbsp; 좌석 칸은 탭해서 직접 입력(자동 저장)
+    </div>
+    <div class="fl-chips" id="fl-chips"></div>
+    <div class="prog-wrap">
+      <div class="prog-bar"><i id="fly-bar"></i></div>
+      <div class="prog-txt" id="fly-cnt">0/40</div>
+    </div>
+    <div class="card" id="st-list"></div>
+  </section>
+</main>
+
+<button id="goto-now" onclick="scrollToNow()">⬇ 현재 일정</button>
+
+<nav>
+  <button class="on" data-pg="pg-sched"><span class="ico">📅</span>일정</button>
+  <button data-pg="pg-fly"><span class="ico">✈️</span>탑승체크</button>
+</nav>
+
+<script>
+/* chk: 체크리스트 · track: 'e'=초등부, 'm'=중고등부, 없으면 공통 */
+const DAYS = [
+{ date:'2026-07-30', label:'1일차', sub:'7.30 (목)', items:[
+ {s:'06:00',e:'06:30',t:'성당 집결 및 OT',w:'성하T',p:'성당 2층',n:'선발대 : 청소년분과 2명 + α',
+  chk:[
+   ['인원 점검 ① — 성당 출발 전','학생 40명 · 봉사자 15명, 결석·지각 시 보호자 연락'],
+   ['아침 간식 배부','이삭 토스트 (전주 서신점) & 생수'],
+   ['OT · 안전 수칙 공지','주임신부님 시작기도'],
+   ['워크북 · 네임택 배부 확인','명찰 뒤 일정표 — 유현T'],
+   ['멀미약 배부','필요 학생 사전 복용 — 현지T'],
+   ['출발 현수막 촬영','나연T·주희T·우진T']
+  ]},
+ {s:'06:30',e:'08:00',t:'광주공항 이동',n:'이동거리 100km (약 90분)\n스타렉스 도우미 섭외',
+  chk:[
+   ['버스 탑승 인원 재확인',''],
+   ['안전벨트 착용 지도',''],
+   ['차내 기도·활동 자료','유현T(초) · 성하T(중고)'],
+   ['구급함·비상약·비닐봉투 버스 비치','유현T']
+  ]},
+ {s:'08:00',e:'09:00',t:'탑승 수속',w:'유현T',p:'광주공항',
+  chk:[
+   ['인원 점검 ② — 공항 도착 후',''],
+   ['명단·항공권 대조','→ [탑승체크] 탭 출발편 활용'],
+   ['티켓 보관 담당 확인','영교T + 백업 1명'],
+   ['위탁 수하물 처리',''],
+   ['보안검색 안내 및 조별 인솔','']
+  ]},
+ {s:'09:00',e:'10:30',t:'✈ 광주공항 출발 (진에어 LJ451)',
+  chk:[
+   ['인원 점검 ③ — 탑승 직전',''],
+   ['좌석 착석·전자기기 지도','']
+  ]},
+ {s:'10:30',e:'11:00',t:'제주공항 도착 및 렌터카 인수',w:'청소년분과',p:'제주공항',
+  n:'차량 4대 : 버스 1대, 스타리아(11인승), 팰리세이드(7인승), 산타페(7인승)',
+  chk:[
+   ['도착 인원 점검·수하물 수취',''],
+   ['렌터카 4대 계약서·보험 범위 확인','면책 조건, 인수 상태'],
+   ['차량 외관 사진 촬영','계약서 사진 보관 — 영교T'],
+   ['차량별 탑승 명단대로 배치','운전 : 성하T·의승T·기준T'],
+   ['차량별 의료용품·구토 대비용품 배분','현지T']
+  ]},
+ {s:'11:00',e:'11:30',t:'식사 장소 이동',n:'이동거리 14km (약 30분)',
+  chk:[
+   ['식당 도착 30분 전 메뉴 사전 공유','윤진T·현희T']
+  ]},
+ {s:'11:30',e:'12:30',t:'점심식사',w:'윤진T·현희T',p:'보말이네',n:'메뉴 : 고기국수, 잔치고기(수육), 만두\n제주시 애월읍 유수암평화길',
+  chk:[
+   ['예약 인원 확인·조별 좌석 배치',''],
+   ['식전 기도',''],
+   ['알레르기 학생 확인','※ 이재율 알러지 체크'],
+   ['결제·영수증 수집','영교T']
+  ]},
+ {s:'12:30',e:'13:00',t:'이시돌길 성지 이동',n:'성이시돌센터 대형주차장 이용\n이동거리 16km (약 20분)'},
+ {s:'13:00',e:'15:10',t:'성이시돌 권역 순례 및 개인 묵상',w:'주혜T',p:'성이시돌센터 일대',
+  sub:[
+   {s:'13:00',e:'13:30',t:'성이시돌센터 방문 및 홍보관 관람'},
+   {s:'13:00',e:'14:20',t:'새미은총의동산 · 삼위일체대성당 관람 및 기도'},
+   {s:'14:20',e:'15:10',t:'성이시돌목장 산책'}
+  ],n:'제주시 한림읍 금악북로 353\n조별로 진행',
+  chk:[
+   ['인원 점검 (하차 후)',''],
+   ['성지 해설·조별 진행 준비','주혜T·진호 학사님'],
+   ['생수 배부·온열질환 예방','모자 착용 지도 — 현지T'],
+   ['단체 사진 촬영','주희T (시간 체크)']
+  ]},
+ {s:'15:10',e:'15:40',t:'청수공소 이동',n:'선발대 먼저 이동\n이동거리 10km (약 15분)\n숙소에 샴푸·바디워시 구비 — 개인 세면도구·수건 필수'},
+ {s:'15:40',e:'16:00',t:'방배정 및 휴식',p:'고산성당 청수공소',n:'쓰레기는 성당 앞 CU 편의점 분리수거장 이용',
+  chk:[
+   ['방 배정표대로 입실','학생 남 21명 · 여 19명, 교사 배치 — 성하T'],
+   ['숙소 안전 수칙 교육','현지T'],
+   ['시설 상태 사전 확인','파손·분실 기준 대비 사진'],
+   ['귀중품 보관 안내','']
+  ]},
+ {s:'16:00',e:'16:20',t:'성김대건신부 제주표착기념관 이동',n:'이동거리 10km (약 15분)'},
+ {s:'16:20',e:'17:15',t:'성김대건신부 제주표착기념관 탐방',w:'주혜T',p:'제주표착기념관',n:'기념관 내부 · 용수교회 · 라파엘호 재현선 관람\n기념성당 미사 참여 후 자유 관람',
+  chk:[
+   ['입장 인원 확인',''],
+   ['단체 입장 결제·영수증','영교T'],
+   ['관람 동선·집결 시간 공지','']
+  ]},
+ {s:'17:15',e:'18:00',t:'저녁식사',w:'윤진T·현희T',p:'제주할망밥상 차귀도점',n:'메뉴 : 흑돼지 제육볶음, 갈치조림 등\n제주시 한경면 노을해안로 1142',
+  chk:[
+   ['예약 확인','테이블당 66,000원 × 14테이블'],
+   ['식전 기도·배식 지도',''],
+   ['결제·영수증 수집','영교T']
+  ]},
+ {s:'18:00',e:'20:00',t:'도보순례 (김대건길)',w:'주혜T',p:'용수리→용수포구→자구내포구→수월봉',n:'이동거리 5.5km (약 1시간)\n마무리 : 수월봉(해발 77m) 일몰 감상 — 19:36 예정',
+  chk:[
+   ['선두·후미 교사 배치','낙오자 수시 확인'],
+   ['인솔자 깃발·플로깅 준비','주혜T·진호 학사님'],
+   ['생수·구급함 휴대','현지T'],
+   ['일몰 시간 대비 페이스 조절','일몰 19:36'],
+   ['어두워진 후 이동 대비 랜턴','']
+  ]},
+ {s:'20:00',e:'20:30',t:'청수공소 이동'},
+ {s:'20:30',e:'23:00',t:'자유일정 (택1)',
+  sub:[
+   {t:'① 야시장 — 수목원길 야시장 (제주시 은수길 69, 왕복 72km 약 1시간 20분, 차량 2대)'},
+   {t:'② 휴식 — 현희T · 청수공소 (간식 : 피자 배달, 세면·취침 자율)'}
+  ],
+  chk:[
+   ['야시장팀 / 휴식팀 명단 분리 확인',''],
+   ['야시장팀 차량 2대·인솔자 확인','성하T·주희T·현지T·유현T'],
+   ['야시장 용돈 배부','1인당 10,000원'],
+   ['휴식팀 간식(피자) 주문','현희T'],
+   ['복귀 시간 공지','']
+  ]},
+ {s:'23:00',e:'23:30',t:'세면 및 취침 (야시장팀)',
+  chk:[
+   ['전원 복귀·인원 확인',''],
+   ['야간 순찰 배정','현지T']
+  ]},
+ {s:'23:00',e:'24:00',t:'교사회의',w:'성하T',p:'청수공소',
+  chk:[
+   ['당일 지출·영수증 정산','영교T (당일 마감 원칙)'],
+   ['학생 특이사항·건강 상태 공유','현지T'],
+   ['2일차 일정·담당 브리핑','']
+  ]}
+]},
+{ date:'2026-07-31', label:'2일차', sub:'7.31 (금)', items:[
+ {s:'08:00',e:'09:00',t:'아침식사 및 세면',w:'윤진T·현희T'},
+ {s:'09:00',e:'09:30',t:'합동 미사',w:'주혜T',p:'청수공소',
+  chk:[
+   ['제구·전례 준비','주혜T·진호 학사님, 신부님 사전 확인'],
+   ['학생 전례 봉사자 배정','독서·해설·봉헌바구니'],
+   ['전례 음악 준비','나연T — 음원 또는 통기타']
+  ]},
+ {s:'09:30',e:'18:30',t:'물놀이',track:'e',w:'초등부 교리교사회',p:'신화워터파크',
+  n:'서귀포시 안덕면 신화역사로304번길 38 (개장 10:00)\n점심식사 : 신화워터파크 內\n이동거리 : 10km (15분)\n인원 : 초등부 20명 + 교사 6명 + 아빠 2명 + 수녀님 + 학사님',
+  chk:[
+   ['초등부 인원 점검','출발 전·도착 후'],
+   ['구명조끼 등 안전장비 확인',''],
+   ['물놀이 안전요원(교사) 배치',''],
+   ['자외선 차단·온열질환 예방','현지T'],
+   ['점심(워터파크 內)·활동비','영교T'],
+   ['활동 사진 촬영','나연T·주희T·우진T → 학부모 단톡방']
+  ]},
+ {s:'09:30',e:'10:00',t:'차귀도 이동',track:'m',w:'중고등부 교리교사회',
+  n:'이동거리 9.4km (15분)\n차량 : 스타리아(신부님), 팰리세이드(성하T), 산타페(윤진T)\n인원 : 중고등부 20명 + 교사 4명 + 신부님',
+  chk:[
+   ['중고등부 인원 점검','출발 전'],
+   ['⚠ 09:50 선착장 도착 필수','배낚시 예약 10:00']
+  ]},
+ {s:'10:00',e:'12:00',t:'바다낚시 with 돌고래',track:'m',p:'차귀도 태양 배낚시',
+  n:'제주시 한경면 노을해안로 1154\n선상회 서비스 + 컵라면 제공',
+  chk:[
+   ['승선 인원 확인',''],
+   ['구명조끼 착용 확인',''],
+   ['멀미약 사전 복용','현지T'],
+   ['결제·영수증','영교T'],
+   ['활동 사진 촬영','나연T·주희T·우진T']
+  ]},
+ {s:'12:00',e:'18:30',t:'점심 및 금능해수욕장',track:'m',p:'금능해수욕장',
+  n:'제주시 한림읍 금능리\n이동 : 차귀도→금능 16km(25분), 금능→공소 8.7km(15분)\n희망자 : 바나나보트·투명카약 등 (제주 금능레저)',
+  chk:[
+   ['점심 식당 확정·식사',''],
+   ['수영 구역 지정·안전요원 배치',''],
+   ['희망자 레저 명단·결제','바나나보트·투명카약 — 영교T'],
+   ['인원 수시 점검',''],
+   ['자외선 차단·온열질환 예방','현지T']
+  ]},
+ {s:'18:30',e:'19:30',t:'청수공소 복귀',n:'샤워 및 휴식',
+  chk:[
+   ['복귀 인원 점검','초등부·중고등부 합류 확인'],
+   ['저녁 건강 상태 체크','현지T']
+  ]},
+ {s:'19:30',e:'20:30',t:'바베큐파티 (야외)',w:'의승T·기준T',p:'청수공소',n:'삼겹살 구이\n사전 장보기 : 하나로마트 고산농협본점 (한경면 용고로 81)',
+  chk:[
+   ['사전 장보기','하나로마트 고산농협본점'],
+   ['화기·그릴 안전 관리','의승T·기준T'],
+   ['쓰레기 분리수거','성당 앞 CU 분리수거장 — 윤진T·현희T']
+  ]},
+ {s:'20:30',e:'22:00',t:'레크리에이션',w:'우진T',
+  chk:[
+   ['사전 공지·참가자 명단·음원 준비','우진T'],
+   ['음향(블루투스 스피커) 확인','학사님'],
+   ['추억 영상용 촬영','나연T·주희T']
+  ]},
+ {s:'22:00',e:'23:30',t:'세면 및 취침',
+  chk:[
+   ['간식 배부',''],
+   ['야간 순찰 배정','현지T']
+  ]},
+ {s:'23:30',e:'24:00',t:'교사회의',w:'성하T',
+  chk:[
+   ['당일 지출·영수증 정산','영교T'],
+   ['학생 특이사항 공유',''],
+   ['3일차 PG별 명단·차량 최종 확인','4개 프로그램 병렬 진행'],
+   ['퇴실 분담 브리핑','']
+  ]}
+]},
+{ date:'2026-08-01', label:'3일차', sub:'8.1 (토)', items:[
+ {s:'07:00',e:'08:30',t:'아침식사 및 세면',p:'고산성당 청수공소',n:'파견미사 준비',
+  chk:[
+   ['아침 건강 상태 체크','현지T'],
+   ['미사 준비','주혜T·진호 학사님']
+  ]},
+ {s:'08:30',e:'09:00',t:'파견미사',w:'주혜T',p:'청수공소',
+  chk:[
+   ['학생 전례 봉사자 배정','독서·해설 등'],
+   ['제구 회수·본당 물품 수량 확인','주혜T·진호 학사님']
+  ]},
+ {s:'09:00',e:'09:30',t:'휴식 및 짐정리',n:'청소 및 퇴실 준비',
+  chk:[
+   ['방별 청소·점검표 확인',''],
+   ['분실물 확인·개인 짐 전부 차량 적재','PG 후 바로 공항 직행'],
+   ['쓰레기 처리·퇴실 완료','숙소 이용료 정산 — 영교T']
+  ]},
+ {s:'09:30',e:'14:30',t:'PG1 — 돌코리숲',track:'e',w:'현희T',p:'돌코리숲',
+  n:'서귀포시 안덕면 중산간서로 1878 (개장 10:00)\n점심식사 : 제주버거 (제주시 월랑로 9)\n이동 : 공소→돌코리숲 11km(15분), 돌코리숲→공항 31km(40분)\n차량 : 스타리아 (신부님)',
+  chk:[
+   ['PG1 선택 학생 명단·인원 점검',''],
+   ['입장·점심 결제·영수증','영교T'],
+   ['개인 짐 차량 적재 재확인','공항 직행'],
+   ['공항 집결 재공지','14:00~ 제주공항']
+  ]},
+ {s:'09:30',e:'14:30',t:'PG2 — 신화테마파크',track:'e',w:'나연T',p:'신화테마파크',
+  n:'서귀포시 안덕면 신화역사로304번길 98 (개장 10:00)\n점심식사 : 신화테마파크 內 (사전 단체 예약)\n이동 : 공소→신화 10km(15분), 신화→공항 31km(40분)\n차량 : 버스',
+  chk:[
+   ['PG2 선택 학생 명단·인원 점검',''],
+   ['점심 단체 예약 확인',''],
+   ['입장 결제·영수증','영교T'],
+   ['개인 짐 차량 적재 재확인','공항 직행'],
+   ['공항 집결 재공지','14:00~ 제주공항']
+  ]},
+ {s:'09:30',e:'14:30',t:'PG3 — 신화테마파크',track:'m',p:'신화테마파크',
+  n:'서귀포시 안덕면 신화역사로304번길 98 (개장 10:00)\n점심식사 : 신화테마파크 內 (사전 단체 예약)\n이동 : 공소→신화 10km(15분), 신화→공항 31km(40분)_버스 (초등부 PG2와 동행)',
+  chk:[
+   ['PG3 선택 학생 명단·인원 점검',''],
+   ['점심 단체 예약 확인',''],
+   ['입장 결제·영수증','영교T'],
+   ['개인 짐 차량 적재 재확인','공항 직행'],
+   ['공항 집결 재공지','14:00~ 제주공항']
+  ]},
+ {s:'09:30',e:'14:30',t:'PG4 — 액티브파크 카트 + 동문시장 + 소품샵',track:'m',w:'영교T',p:'액티브파크 → 동문시장',
+  n:'액티브파크 카트 : 제주시 한림읍 금능남로 76\n동문시장 : 제주시 동문로 16 (점심 : 동문시장 內)\n이동 : 공소→카트 8km(15분), 카트→동문시장 35km(60분), 동문시장→공항 4km(15분)\n차량 : 팰리세이드(성하T), 산타페(윤진T)',
+  chk:[
+   ['PG4 선택 학생 명단·인원 점검',''],
+   ['카트 안전장비·서약 확인',''],
+   ['동문시장 조별 이동·집결 시간 공지','점심 동문시장 內'],
+   ['결제·영수증','영교T'],
+   ['개인 짐 차량 적재 재확인','공항 직행'],
+   ['공항 집결 재공지','14:00~ 제주공항']
+  ]},
+ {s:'14:00',e:'15:30',t:'제주공항 집결 및 인원파악',w:'청소년분과',p:'제주공항',
+  chk:[
+   ['인원 점검 ① — 공항 집결','4개 PG팀 합류 확인'],
+   ['렌터카 4대 반납','주유 영수증·분실물·계약 종료 확인'],
+   ['차량 내 분실물 재확인','']
+  ]},
+ {s:'15:30',e:'16:30',t:'탑승 수속',w:'유현T',p:'제주공항',
+  chk:[
+   ['인원 점검 ② — 수속 전',''],
+   ['명단·항공권 대조','→ [탑승체크] 탭 귀국편 활용'],
+   ['위탁 수하물 처리','']
+  ]},
+ {s:'16:30',e:'18:00',t:'✈ 제주공항 출발 (제주항공 7C306)',
+  chk:[
+   ['인원 점검 ③ — 탑승 직전','']
+  ]},
+ {s:'18:00',e:'19:30',t:'광주공항 도착 및 전주 이동',p:'광주공항',n:'이동거리 100km (90분)',
+  chk:[
+   ['도착 인원·수하물 확인',''],
+   ['버스 탑승 인원 확인','']
+  ]},
+ {s:'19:30',e:'24:00',t:'성당 도착 및 해산',p:'서신동 성당',
+  chk:[
+   ['보호자 인계 확인','전원 귀가 확인 후 해산'],
+   ['전례 물품·현수막·비품 회수',''],
+   ['영수증·정산 자료 취합','영교T → 결산 보고']
+  ]}
+]}];
+
+const FLIGHTS = [
+ {id:'LJ451', f1:'출발편 진에어 LJ451', f2:'7/30 (목) 09:00 광주 → 제주'},
+ {id:'7C306', f1:'귀국편 제주항공 7C306', f2:'8/1 (토) 16:30 제주 → 광주'}
+];
+
+/* 최종 명단 기준 40명 */
+const STUDENTS = [
+ ['초3','김연서','요안나'],['초3','문유빈','카타리나'],['초3','송유찬','토마스모어'],['초3','김이현','마리아'],
+ ['초4','김태인','라파엘'],['초4','백건휘','세례자 요한'],['초4','양아인','스텔라'],['초4','진시원','시몬'],
+ ['초5','백건하','프란치스코'],['초5','이승재','미카엘'],['초5','이유준','비오'],['초5','이재율','바오로'],
+ ['초5','이지훈','미카엘'],['초5','정주영',''],
+ ['초6','강지우','유스티나'],['초6','강현겸','그레고리오'],['초6','김연우','올리비아'],['초6','조승우','안드레아'],
+ ['초6','진채은','소화데레사'],['초6','홍지윤',''],
+ ['중1','최주빈','아녜스'],
+ ['중2','강건우','마르첼리노'],['중2','강원교','마르첼리나'],['중2','김수인','십자가의성요한'],['중2','김태욱','마빌로'],
+ ['중2','문채은','루시아'],['중2','백건우','요셉'],['중2','백채영',''],['중2','이지용','세례자요한'],
+ ['중2','정려원','젬마'],['중2','조연우','유스티나'],['중2','탁지민',''],['중2','하송연','세라피나'],
+ ['중2','홍채영','베로니카'],
+ ['중3','김정인','라파엘라'],['중3','전채원','루시아'],
+ ['고1','형유민',''],['고1','홍정택','세례자요한'],
+ ['고2','김태훈','베네딕토'],['고2','이태윤','요한 카페스트라노']
+];
+
+const NS='camp2026_';
+const get=k=>{try{return localStorage.getItem(NS+k)}catch(e){return null}};
+const set=(k,v)=>{try{localStorage.setItem(NS+k,v)}catch(e){}};
+const del=k=>{try{localStorage.removeItem(NS+k)}catch(e){}};
+
+const toMin=s=>{const[a,b]=s.split(':').map(Number);return a*60+b;};
+const pad=n=>String(n).padStart(2,'0');
+function todayStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function visible(it){return !it.track || it.track===selTrack;}
+
+let selDay=0;
+let selTrack=get('track')||'e';
+const openSet=new Set();
+(function initDay(){
+  const t=todayStr(new Date());
+  const di=DAYS.findIndex(d=>d.date===t);
+  selDay=di>=0?di:0;
+})();
+
+function tick(){
+  const now=new Date();
+  const wd='일월화수목금토'[now.getDay()];
+  document.getElementById('clock').textContent=
+    pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  const t=todayStr(now), pill=document.getElementById('status-pill'), brief=document.getElementById('now-brief');
+  const di=DAYS.findIndex(d=>d.date===t);
+  if(di>=0){
+    pill.textContent='🏝 '+DAYS[di].label+' 진행 중 ('+pad(now.getMonth()+1)+'.'+pad(now.getDate())+' '+wd+')';
+    const cur=currentItems(di,now);
+    brief.textContent=cur.length?('지금 : '+cur[0].t):'';
+  }else{
+    const start=new Date(2026,6,30), end=new Date(2026,7,1);
+    const today0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    if(today0<start){
+      const dd=Math.round((start-today0)/86400000);
+      pill.textContent='🗓 출발까지 D-'+dd+' (7.30 06:00 성당 집결)';
+    }else if(today0>end){
+      pill.textContent='✅ 일정 종료 — 수고하셨습니다!';
+    }
+    brief.textContent='';
+  }
+}
+function currentItems(di,now){
+  const m=now.getHours()*60+now.getMinutes();
+  return DAYS[di].items.filter(it=>visible(it) && toMin(it.s)<=m && m<toMin(it.e));
+}
+
+function renderChips(){
+  document.getElementById('day-chips').innerHTML=DAYS.map((d,i)=>
+    `<button class="${i===selDay?'on':''}" onclick="pickDay(${i})">
+      <div class="d1">${d.label}</div><div class="d2">${d.sub}</div></button>`).join('');
+  const hasTracks=DAYS[selDay].items.some(it=>it.track);
+  document.getElementById('track-chips').classList.toggle('show',hasTracks);
+  document.getElementById('tr-e').classList.toggle('on',selTrack==='e');
+  document.getElementById('tr-m').classList.toggle('on',selTrack==='m');
+}
+function pickDay(i){selDay=i;renderChips();renderTL();}
+function pickTrack(tr){selTrack=tr;set('track',tr);renderChips();renderTL();}
+
+function chkCount(di,ii){
+  const it=DAYS[di].items[ii];
+  if(!it.chk) return [0,0];
+  const done=it.chk.filter((_,k)=>get('ic_'+di+'_'+ii+'_'+k)==='1').length;
+  return [done,it.chk.length];
+}
+
+function itemHTML(it,state,di,ii){
+  const key=di+'_'+ii;
+  const badge=state==='now'?'<span class="now-badge">NOW</span>':
+              state==='next'?'<span class="next-badge">다음</span>':'';
+  const tag=it.track?('<span class="track-tag '+it.track+'">'+(it.track==='e'?'초등부':'중고등부')+'</span>'):'';
+  const meta=[it.w?('담당 <b>'+esc(it.w)+'</b>'):'', it.p?('📍 '+esc(it.p)):''].filter(Boolean).join(' &nbsp;·&nbsp; ');
+  const sub=it.sub?('<div class="tl-sub">'+it.sub.map(s=>
+    '<div class="s-row">'+(s.s?('<b>'+s.s+'~'+s.e+'</b> '):'')+esc(s.t)+'</div>').join('')+'</div>'):'';
+  let chkHtml='';
+  if(it.chk){
+    const [done,total]=chkCount(di,ii);
+    const rows=it.chk.map((c,k)=>{
+      const on=get('ic_'+key+'_'+k)==='1';
+      return `<label class="chk ${on?'done':''}" onclick="event.stopPropagation()">
+        <input type="checkbox" ${on?'checked':''} onchange="tglChk(${di},${ii},${k},this)">
+        <span class="t">${esc(c[0])}${c[1]?'<small>'+esc(c[1])+'</small>':''}</span></label>`;
+    }).join('');
+    chkHtml=`<div class="chk-summary">✅ 체크리스트
+        <span class="cnt ${done===total?'full':''}" id="cc-${key}">${done}/${total}</span>
+        <span class="arrow">▶</span></div>
+      <div class="chk-list">${rows}</div>`;
+  }
+  return `<div class="tl-item ${state==='past'?'past':state==='now'?'now':''} ${it.chk?'has-chk':''} ${openSet.has(key)?'open':''}"
+    ${state==='now'?'data-now="1"':''} ${it.chk?`onclick="tglOpen('${key}',this)"`:''}>
+    ${badge}
+    <div class="tl-time">${it.s} ~ ${it.e==='24:00'?'':it.e}${tag}</div>
+    <div class="tl-title">${esc(it.t)}</div>
+    ${meta?'<div class="tl-meta">'+meta+'</div>':''}
+    ${sub}
+    ${it.n?'<div class="tl-note">'+esc(it.n)+'</div>':''}
+    ${chkHtml}
+  </div>`;
+}
+function tglOpen(key,el){
+  if(openSet.has(key)){openSet.delete(key);el.classList.remove('open');}
+  else{openSet.add(key);el.classList.add('open');}
+}
+function tglChk(di,ii,k,el){
+  set('ic_'+di+'_'+ii+'_'+k, el.checked?'1':'0');
+  el.closest('label').classList.toggle('done',el.checked);
+  const [done,total]=chkCount(di,ii);
+  const cc=document.getElementById('cc-'+di+'_'+ii);
+  if(cc){cc.textContent=done+'/'+total; cc.classList.toggle('full',done===total);}
+}
+function renderTL(){
+  const now=new Date(), isToday=DAYS[selDay].date===todayStr(now);
+  const m=now.getHours()*60+now.getMinutes();
+  let nextMarked=false;
+  document.getElementById('tl').innerHTML=DAYS[selDay].items.map((it,ii)=>{
+    if(!visible(it)) return '';
+    let st='';
+    if(isToday){
+      if(toMin(it.e)<=m) st='past';
+      else if(toMin(it.s)<=m) st='now';
+      else if(!nextMarked){st='next';nextMarked=true;}
+    }
+    return itemHTML(it,st,selDay,ii);
+  }).join('');
+  document.getElementById('goto-now').style.display=
+    (isToday && document.querySelector('#pg-sched.on') && document.querySelector('[data-now]'))?'block':'none';
+}
+function scrollToNow(){
+  const el=document.querySelector('[data-now]');
+  if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+let selFl=0;
+(function initFl(){ if(todayStr(new Date())>='2026-08-01') selFl=1; })();
+
+function renderFlChips(){
+  document.getElementById('fl-chips').innerHTML=FLIGHTS.map((f,i)=>
+    `<button class="${i===selFl?'on':''}" onclick="pickFl(${i})">
+      <div class="f1">${f.f1}</div><div class="f2">${f.f2}</div></button>`).join('');
+}
+function pickFl(i){selFl=i;renderFlChips();renderSt();}
+
+/* 체크 키는 학생 이름 기준 → 명단 순서가 바뀌어도 체크 유지 */
+function renderSt(){
+  const fid=FLIGHTS[selFl].id;
+  let html='', lastGrade='';
+  STUDENTS.forEach((s,i)=>{
+    if(s[0]!==lastGrade){lastGrade=s[0];
+      const cnt=STUDENTS.filter(x=>x[0]===s[0]).length;
+      html+=`<div class="grade-head">${s[0]} (${cnt}명)</div>`;}
+    const on=get('fl_'+fid+'_'+s[1])==='1';
+    const seat=get('seat_'+fid+'_'+s[1])||'';
+    html+=`<div class="st-row ${on?'done':''}" id="str-${i}">
+      <input type="checkbox" ${on?'checked':''} onchange="tglFl(${i},this)">
+      <span class="st-name">${esc(s[1])}${s[2]?'<small>'+esc(s[2])+'</small>':''}</span>
+      <input class="seat-in" placeholder="좌석" maxlength="4" value="${esc(seat)}"
+        oninput="set('seat_${fid}_${s[1]}',this.value)">
+    </div>`;
+  });
+  document.getElementById('st-list').innerHTML=html;
+  updFlyProg();
+}
+function tglFl(i,el){
+  const fid=FLIGHTS[selFl].id;
+  set('fl_'+fid+'_'+STUDENTS[i][1], el.checked?'1':'0');
+  document.getElementById('str-'+i).classList.toggle('done',el.checked);
+  updFlyProg();
+}
+function updFlyProg(){
+  const fid=FLIGHTS[selFl].id;
+  const done=STUDENTS.filter(s=>get('fl_'+fid+'_'+s[1])==='1').length;
+  document.getElementById('fly-cnt').textContent=done+'/'+STUDENTS.length;
+  document.getElementById('fly-bar').style.width=(done/STUDENTS.length*100)+'%';
+}
+function resetFlight(){
+  const f=FLIGHTS[selFl];
+  if(!confirm(f.f1+' 탑승 체크를 초기화할까요? (좌석 입력은 유지)'))return;
+  STUDENTS.forEach(s=>del('fl_'+f.id+'_'+s[1]));
+  renderSt();
+}
+
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById(b.dataset.pg).classList.add('on');
+    window.scrollTo(0,0);
+    renderTL();
+  });
+});
+
+renderChips(); renderTL(); renderFlChips(); renderSt();
+tick(); setInterval(tick,1000);
+setInterval(renderTL,30000);
+</script>
+<!-- build v5 : 항공편 LJ451/7C306 · 기상미션 삭제 · 창섭T 제외 -->
+</body>
+</html>
